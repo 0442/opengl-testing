@@ -5,7 +5,10 @@ layout (location = 1) in vec3 vertCol;
 
 out vec3 vertColorAttrib;
 
+uniform float xOffset;
+uniform float yOffset;
+
 void main() {
-    gl_Position = vec4(vertPos.xyz, 1.0f);
+    gl_Position = vec4(vertPos.x + xOffset, vertPos.y + yOffset, vertPos.z, 1.0f);
     vertColorAttrib = vertCol;
 }

@@ -26,7 +26,7 @@ GLuint compileShaders() {
         vertShaderFileContent.append(fBuf+'\n');
     }
     vertShaderFile.close();
-    const GLchar* vertShaderSource = vertShaderFileContent.data();
+    const GLchar* vertShaderSource = vertShaderFileContent.c_str();
 
     // read frag shader
     ifstream fragShaderFile (FRAG_SHADER_FILE);
@@ -36,7 +36,7 @@ GLuint compileShaders() {
         fragShaderFileContent.append(fBuf+'\n');
     }
     fragShaderFile.close();
-    const GLchar* fragShaderSource = fragShaderFileContent.data();
+    const GLchar* fragShaderSource = fragShaderFileContent.c_str();
 
     // create and compile shaders
     GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
@@ -173,8 +173,11 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
-    // get uniform location
+    // get uniform locations
     GLint fragTimeUnifLocation = glGetUniformLocation(shaderProgram, "changingColor");
+    GLint xOffsetLocation = glGetUniformLocation(shaderProgram, "xOffset");
+    GLint yOffsetLocation = glGetUniformLocation(shaderProgram, "yOffset");
+
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -189,6 +192,10 @@ int main() {
         float currTime = glfwGetTime();
         float changingNum = sin(int(currTime*100) % 1000 / 1000.0f * 3.141592f );
         glUniform4f(fragTimeUnifLocation, 0.6f, 0.8f, changingNum*1.0, 1.0f);
+
+        glUniform1f(xOffsetLocation, cos(currTime*8)/2);
+        glUniform1f(yOffsetLocation, sin(currTime*8)/2);
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();
