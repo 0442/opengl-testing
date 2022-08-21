@@ -116,11 +116,18 @@ int main() {
 
 
 
-    // define verticies of a triangle
+    // verticies of a square
     GLfloat vertices[] = {
-        -0.5f, -0.5f, 0.0f,
+         0.5f,  0.5f, 0.0f,
          0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
+        -0.5f, -0.5f, 0.0f,
+        -0.5f,  0.5f, 0.0f
+    };
+
+    // indices for EBO
+    GLuint indices[] = {
+        0, 1, 3,
+        1, 2, 3
     };
 
     
@@ -130,6 +137,12 @@ int main() {
     glGenVertexArrays(1, &VAO);
     // bind and configure this VAO
     glBindVertexArray(VAO);
+
+        GLuint EBO;
+        glGenBuffers(1, &EBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
         // setup a VBO from which vertex shader can take attributes from
         GLuint VBO;
@@ -141,12 +154,11 @@ int main() {
             // specify where to get vertex attribute data from currently bound VBO
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
-            // no more changes to VBO, so unbind it
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // no more changes to VAO, so unbind it
+    // no more changes to VAO, so unbind all
     glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     
 
 
@@ -158,7 +170,8 @@ int main() {
         // rendering
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
