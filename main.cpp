@@ -4,12 +4,13 @@
 #include <fstream>
 #include <string>
 #include <vector>
-
-#define WIN_W 500
-#define WIN_H 500
+#include <math.h>
 
 #define VERT_SHADER_FILE "shader.vert"
 #define FRAG_SHADER_FILE "shader.frag"
+
+const uint WIN_W = 500;
+const uint WIN_H = 500;
 
 GLuint compileShaders() {
     using namespace std;
@@ -114,6 +115,9 @@ int main() {
     // make and opengl viewport
     glViewport(0, 0, WIN_W, WIN_H);
 
+    // compile shader program
+    GLuint shaderProgram = compileShaders();
+
 
 
     // verticies of a square
@@ -124,7 +128,7 @@ int main() {
         -0.5f,  0.5f, 0.0f
     };
 
-    // indices for EBO
+    // indices for EBO to drawing a square
     GLuint indices[] = {
         0, 1, 3,
         1, 2, 3
@@ -159,11 +163,10 @@ int main() {
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
 
 
-    // compile shader program
-    GLuint shaderProgram = compileShaders();
+    // get uniform location
+    GLint fragTimeUnifLocation = glGetUniformLocation(shaderProgram, "changingColor");
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -173,11 +176,17 @@ int main() {
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
+        // update uniforms
+        float currTime = glfwGetTime();
+        float changingNum = sin(int(currTime*100) % 1000 / 1000.0f * 3.141592f );
+        std::cout << changingNum << std::endl;
+        glUniform4f(fragTimeUnifLocation, 0.6f, 0.8f, changingNum*1.0, 1.0f);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
         handleKeyInput(window);
         
-        glClearColor(0.09f, 0.07f, 0.17f, 1.0f);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
     }
