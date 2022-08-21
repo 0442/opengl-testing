@@ -122,13 +122,14 @@ int main() {
 
     // verticies of a square
     GLfloat vertices[] = {
-         0.5f,  0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        -0.5f,  0.5f, 0.0f
+        //   positions             colors
+         0.5f,  0.5f, 0.0f,   1.0f, 0.8f, 0.4f,
+         0.5f, -0.5f, 0.0f,   1.0f, 0.7f, 0.5f,
+        -0.5f, -0.5f, 0.0f,   1.0f, 0.6f, 0.6f,
+        -0.5f,  0.5f, 0.0f,   1.0f, 0.7f, 0.5f    
     };
 
-    // indices for EBO to drawing a square
+    // indices for EBO to draw a square
     GLuint indices[] = {
         0, 1, 3,
         1, 2, 3
@@ -142,22 +143,29 @@ int main() {
     // bind and configure this VAO
     glBindVertexArray(VAO);
 
+        // EBO has indices for element drawing
+        
         GLuint EBO;
         glGenBuffers(1, &EBO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        
 
         // setup a VBO from which vertex shader can take attributes from
         GLuint VBO;
         glGenBuffers(1, &VBO);
-        // bind and configure this VBO, set(+alloc) vertex attributes
+        // bind and configure this VBO ( set(+alloc) vertex attributes)
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
             glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-            // specify where to get vertex attribute data from currently bound VBO
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+            // specify how buffer is constructed / where to get different vertex attribute data from
+            // positions
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
+            // colors
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
 
     // no more changes to VAO, so unbind all
     glBindVertexArray(0);
@@ -174,12 +182,12 @@ int main() {
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
 
         // update uniforms
         float currTime = glfwGetTime();
         float changingNum = sin(int(currTime*100) % 1000 / 1000.0f * 3.141592f );
-        std::cout << changingNum << std::endl;
         glUniform4f(fragTimeUnifLocation, 0.6f, 0.8f, changingNum*1.0, 1.0f);
 
         glfwSwapBuffers(window);
