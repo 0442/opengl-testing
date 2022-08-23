@@ -1,10 +1,22 @@
 #include <GLES3/gl3.h>
 #include <GLFW/glfw3.h>
+
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/scalar_constants.hpp>
+#include <glm/ext/matrix_projection.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <glm/ext/matrix_clip_space.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <math.h>
+#include "implement_stb_image.cpp"
 
 #define VERT_SHADER_FILE "shader.vert"
 #define FRAG_SHADER_FILE "shader.frag"
@@ -64,7 +76,6 @@ GLuint compileShaders() {
     }
 
 
-    cout << vertShaderSource << endl << fragShaderSource << endl;
 
     // create shader program and attach shaders
     GLuint shaderProgram = glCreateProgram();
@@ -112,30 +123,90 @@ int main() {
     GLFWwindow* window = windowSetup();
     glfwMakeContextCurrent(window);
 
-    // make and opengl viewport
+    // make an opengl viewport
     glViewport(0, 0, WIN_W, WIN_H);
 
     // compile shader program
     GLuint shaderProgram = compileShaders();
 
+    // gl enables
+    glEnable(GL_DEPTH_TEST);
 
 
     // verticies of a square
+
     GLfloat vertices[] = {
-        //   positions             colors
-         0.5f,  0.5f, 0.0f,   1.0f, 0.8f, 0.4f,
-         0.5f, -0.5f, 0.0f,   1.0f, 0.7f, 0.5f,
-        -0.5f, -0.5f, 0.0f,   1.0f, 0.6f, 0.6f,
-        -0.5f,  0.5f, 0.0f,   1.0f, 0.7f, 0.5f    
+        //vert. positions          colors         tex. positions
+        // top
+         0.5f,  0.5f,  0.5f,   1.0f, 0.8f, 0.4f,    1.0f,  1.0f, 
+         0.5f, -0.5f,  0.5f,   1.0f, 0.7f, 0.5f,    1.0f,  0.0f, 
+        -0.5f, -0.5f,  0.5f,   1.0f, 0.6f, 0.6f,    0.0f,  0.0f, 
+        -0.5f,  0.5f,  0.5f,   1.0f, 0.7f, 0.5f,    0.0f,  1.0f,
+        // bottom
+         0.5f,  0.5f, -0.5f,   1.0f, 0.8f, 0.4f,    1.0f,  1.0f, 
+         0.5f, -0.5f, -0.5f,   1.0f, 0.7f, 0.5f,    1.0f,  0.0f, 
+        -0.5f, -0.5f, -0.5f,   1.0f, 0.6f, 0.6f,    0.0f,  0.0f, 
+        -0.5f,  0.5f, -0.5f,   1.0f, 0.7f, 0.5f,    0.0f,  1.0f,
+        // front
+         0.5f,  0.5f,  0.0f,   1.0f, 0.8f, 0.4f,    1.0f,  1.0f, 
+         0.5f, -0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    1.0f,  0.0f, 
+        -0.5f, -0.5f,  0.0f,   1.0f, 0.6f, 0.6f,    0.0f,  0.0f, 
+        -0.5f,  0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    0.0f,  1.0f,
+        // back
+         0.5f,  0.5f,  0.0f,   1.0f, 0.8f, 0.4f,    1.0f,  1.0f, 
+         0.5f, -0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    1.0f,  0.0f, 
+        -0.5f, -0.5f,  0.0f,   1.0f, 0.6f, 0.6f,    0.0f,  0.0f, 
+        -0.5f,  0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    0.0f,  1.0f,
+        // left
+         0.5f,  0.5f,  0.0f,   1.0f, 0.8f, 0.4f,    1.0f,  1.0f, 
+         0.5f, -0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    1.0f,  0.0f, 
+        -0.5f, -0.5f,  0.0f,   1.0f, 0.6f, 0.6f,    0.0f,  0.0f, 
+        -0.5f,  0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    0.0f,  1.0f,
+        // right
+         0.5f,  0.5f,  0.0f,   1.0f, 0.8f, 0.4f,    1.0f,  1.0f, 
+         0.5f, -0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    1.0f,  0.0f, 
+        -0.5f, -0.5f,  0.0f,   1.0f, 0.6f, 0.6f,    0.0f,  0.0f, 
+        -0.5f,  0.5f,  0.0f,   1.0f, 0.7f, 0.5f,    0.0f,  1.0f,
     };
 
     // indices for EBO to draw a square
     GLuint indices[] = {
+        //top
         0, 1, 3,
-        1, 2, 3
+        1, 2, 3,
+        //bottom
+        4, 5, 6,
+        5, 6, 7,
     };
 
+
+
+    // texturing
+    // tex params
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // load texture
+    int imgX, imgY, imgComp; 
+    unsigned char* imgData = stbi_load("texture.jpeg", &imgX, &imgY, &imgComp, 0);
+    if (!imgData) {
+        std::cout << "Failed to load textures" << std::endl;
+    }
+
+    // generate 
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgX, imgY, 0, GL_RGB, GL_UNSIGNED_BYTE, imgData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    // no more changes, unbind and free image memory
+    glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(imgData);
     
+
 
     // create VAO
     GLuint VAO;
@@ -161,28 +232,52 @@ int main() {
             glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
             // specify how buffer is constructed / where to get different vertex attribute data from
             // positions
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
             // colors
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
             glEnableVertexAttribArray(1);
+            // texture positions
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
+            glEnableVertexAttribArray(2);
 
-    // no more changes to VAO, so unbind all
+    // no more changes to VAO, unbind all
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
+
+    // matricies
+    //model matrix
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, glm::radians(-70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    //view
+    glm::mat4 camera = glm::mat4(1.0f);
+    camera = glm::translate(camera, glm::vec3(0.0f, -0.5f, -2.0f));
+    //projection
+    glm::mat4 projection = glm::mat3(1.0f);
+    projection = glm::perspective(glm::radians(100.0f), (1.0f * WIN_W) / WIN_H, 0.1f, 100.0f);
+
+
+
     // get uniform locations
-    GLint fragTimeUnifLocation = glGetUniformLocation(shaderProgram, "changingColor");
+    GLint changingNumLocation = glGetUniformLocation(shaderProgram, "changingNum");
     GLint xOffsetLocation = glGetUniformLocation(shaderProgram, "xOffset");
     GLint yOffsetLocation = glGetUniformLocation(shaderProgram, "yOffset");
+    GLint textureLocation = glGetUniformLocation(shaderProgram, "texture1");
+    // transformation matricies
+    GLint modelMatLocation = glGetUniformLocation(shaderProgram, "model");
+    GLint cameraMatLocation = glGetUniformLocation(shaderProgram, "camera");
+    GLint projectionMatLocation = glGetUniformLocation(shaderProgram, "projection");
 
 
 
     while (!glfwWindowShouldClose(window)) {
         // rendering
         glUseProgram(shaderProgram);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -190,11 +285,17 @@ int main() {
 
         // update uniforms
         float currTime = glfwGetTime();
-        float changingNum = sin(int(currTime*100) % 1000 / 1000.0f * 3.141592f );
-        glUniform4f(fragTimeUnifLocation, 0.6f, 0.8f, changingNum*1.0, 1.0f);
+        float changingNum = sin(((int(currTime*1000) % 10000) / 10000.0f) * 3.141592f );
+        glUniform1f(changingNumLocation, changingNum);
 
-        glUniform1f(xOffsetLocation, cos(currTime*8)/2);
-        glUniform1f(yOffsetLocation, sin(currTime*8)/2);
+        glUniform1f(xOffsetLocation, cos(currTime*3)/2);
+        glUniform1f(yOffsetLocation, sin(currTime*3)/2);
+
+        glUniform1i(textureLocation, 0);
+
+        glUniformMatrix4fv(modelMatLocation, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(cameraMatLocation, 1, GL_FALSE, glm::value_ptr(camera));
+        glUniformMatrix4fv(projectionMatLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
 
         glfwSwapBuffers(window);
@@ -203,7 +304,7 @@ int main() {
         
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-
+        glClear(GL_DEPTH_BUFFER_BIT);
     }
 
     glfwTerminate();
