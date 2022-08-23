@@ -8,7 +8,6 @@
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/matrix_projection.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 #include <glm/ext/matrix_clip_space.hpp>
 
 #include <iostream>
@@ -248,19 +247,6 @@ int main() {
 
 
 
-    // matricies
-    //model matrix
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(-70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    //view
-    glm::mat4 camera = glm::mat4(1.0f);
-    camera = glm::translate(camera, glm::vec3(0.0f, -0.5f, -2.0f));
-    //projection
-    glm::mat4 projection = glm::mat3(1.0f);
-    projection = glm::perspective(glm::radians(100.0f), (1.0f * WIN_W) / WIN_H, 0.1f, 100.0f);
-
-
-
     // get uniform locations
     GLint changingNumLocation = glGetUniformLocation(shaderProgram, "changingNum");
     GLint xOffsetLocation = glGetUniformLocation(shaderProgram, "xOffset");
@@ -274,6 +260,29 @@ int main() {
 
 
     while (!glfwWindowShouldClose(window)) {
+        float currTime = glfwGetTime();
+        float changingNum = sin(((int(currTime*1000) % 10000) / 10000.0f) * 3.141592f );
+
+        // matricies
+        //model matrix
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        //lookAt matrix
+        glm::vec3 cameraPos = glm::vec3(cos(currTime), sin(currTime), 1.0f);
+        glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 cameraZvec= glm::normalize(cameraPos - cameraTarget);
+        glm::vec3 worldYvec = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 cameraXvec = glm::normalize(glm::cross(worldYvec, cameraZvec));
+        glm::vec3 cameraYvec = glm::cross(cameraZvec, cameraXvec);
+
+        glm::mat4 lookAt = glm::lookAt(cameraPos, cameraTarget, cameraYvec);
+
+        //projection
+        glm::mat4 projection = glm::mat3(1.0f);
+        projection = glm::perspective(glm::radians(75.0f), (1.0f * WIN_W) / WIN_H, 0.1f, 100.0f);
+
+
         // rendering
         glUseProgram(shaderProgram);
         glActiveTexture(GL_TEXTURE0);
@@ -284,17 +293,15 @@ int main() {
         glBindVertexArray(0);
 
         // update uniforms
-        float currTime = glfwGetTime();
-        float changingNum = sin(((int(currTime*1000) % 10000) / 10000.0f) * 3.141592f );
         glUniform1f(changingNumLocation, changingNum);
 
-        glUniform1f(xOffsetLocation, cos(currTime*3)/2);
-        glUniform1f(yOffsetLocation, sin(currTime*3)/2);
+        glUniform1f(xOffsetLocation, 0.0f);
+        glUniform1f(yOffsetLocation, 0.0f);
 
         glUniform1i(textureLocation, 0);
 
         glUniformMatrix4fv(modelMatLocation, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(cameraMatLocation, 1, GL_FALSE, glm::value_ptr(camera));
+        glUniformMatrix4fv(cameraMatLocation, 1, GL_FALSE, glm::value_ptr(lookAt));
         glUniformMatrix4fv(projectionMatLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
 
