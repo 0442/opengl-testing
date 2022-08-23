@@ -23,6 +23,19 @@
 const uint WIN_W = 500;
 const uint WIN_H = 500;
 
+// inital camera values
+glm::vec3 cameraPosVec = glm::vec3(0.0f, 0.0f, -1.0f);
+// normal vectors defining camera space
+float currAngleOfYaw = 0.0f;
+float currAngleOfPitch = 0.0f;
+glm::vec3 cameraZvec = glm::vec3(0.0f, 0.0f, 0.0f); // i.e. direction vector
+glm::vec3 cameraYvec = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 cameraXvec = glm::vec3(1.0f, 0.0f, 0.0f);
+ // a point in the direction of the camera (target)
+glm::vec3 cameraTargetVec;
+
+
+
 GLuint compileShaders() {
     using namespace std;
     
@@ -115,6 +128,37 @@ void handleKeyInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     } 
+
+    // wasd for camera space x,z plane movement
+    const float speed = 0.1f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        cameraPosVec += -speed*cameraXvec;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        cameraPosVec += speed*cameraZvec;
+    }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        cameraPosVec += -speed*cameraZvec;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        cameraPosVec += speed*cameraXvec;
+    }
+    // jk for up and down
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+        cameraPosVec += speed*cameraYvec;
+    }
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+        cameraPosVec += -speed*cameraYvec;
+    }
+    // hl for rotation
+    const float rotationAngle = 3.0f;
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+        currAngleOfPitch += -rotationAngle;
+    }
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+        currAngleOfPitch += rotationAngle;
+    }
+
 }
 
 int main() {
@@ -266,17 +310,18 @@ int main() {
         // matricies
         //model matrix
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        //model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
         //lookAt matrix
-        glm::vec3 cameraPos = glm::vec3(cos(currTime), sin(currTime), 1.0f);
-        glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::vec3 cameraZvec= glm::normalize(cameraPos - cameraTarget);
-        glm::vec3 worldYvec = glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::vec3 cameraXvec = glm::normalize(glm::cross(worldYvec, cameraZvec));
-        glm::vec3 cameraYvec = glm::cross(cameraZvec, cameraXvec);
+        cameraTargetVec = cameraPosVec - cameraZvec; 
 
-        glm::mat4 lookAt = glm::lookAt(cameraPos, cameraTarget, cameraYvec);
+        cameraZvec.x = cos(glm::radians(currAngleOfPitch));
+        cameraZvec.z = sin(glm::radians(currAngleOfPitch));
+        
+        cameraXvec = glm::cross(cameraZvec, cameraYvec);
+        //cameraZvec.y = cos(glm::radians(currAngleOfYaw));
+
+        glm::mat4 lookAt = glm::lookAt(cameraPosVec, cameraTargetVec, cameraYvec);
 
         //projection
         glm::mat4 projection = glm::mat3(1.0f);
